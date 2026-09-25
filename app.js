@@ -196,7 +196,70 @@ function diagnosis(){
   <button class="btn-primary" id="confirmDiag">Confirm Diagnosis</button>
  </div>`;
 }
-function textHas(text, words){ const t=text.toLowerCase(); return words.some(w=>t.includes(w)); }
+function normalizeTechText(text){
+  return (text || "")
+    .toLowerCase()
+    .replace(/[^\w\s.-]/g," ")
+    .replace(/\s+/g," ")
+    .trim();
+}
+
+const techConcepts = {
+  failedContactorCoil: [
+    "failed contactor coil","faulty contactor coil","bad contactor coil","open contactor coil",
+    "open coil","coil open","contactor coil open","defective contactor coil",
+    "contactor failed because coil","failed contactor"
+  ],
+  openCircuitEvidence: [
+    "ol","o.l","open circuit","no continuity","infinite resistance","open resistance","coil open"
+  ],
+  replaceContactor: [
+    "replace contactor","replace the contactor","replace coil","replace contactor coil",
+    "change contactor","change the contactor","same rating","correct rating","correctly rated"
+  ],
+  highResistanceJoint: [
+    "high resistance","high-resistance","loose terminal","loose termination","loose connection",
+    "loose wire","poor termination","poor connection","bad connection","bad termination",
+    "hot joint","hot connection","burnt terminal","burned terminal","discolored terminal",
+    "discoloured terminal","voltage drop","resistive connection","resistive termination"
+  ],
+  reterminateRepair: [
+    "reterminate","re-terminate","re terminate","tighten terminal","tighten connection",
+    "repair termination","repair connection","replace terminal","replace conductor",
+    "replace damaged wire","cut bad section","cut the bad section","strip back wire",
+    "torque terminal","torque connection","secure terminal","secure connection"
+  ],
+  contactorPullIn: ["pull in","pulls in","engage","engages","energize","energizes","no chatter","without chatter","cleanly"],
+  motorStarts: ["motor starts","motor start","starts normally","runs normally","remains running","motor runs"],
+  voltageCheck: ["coil voltage","rated voltage","120 vac","120v","voltage at coil","voltage coming to the contactor","voltage on contactor","check voltage"],
+  rotation: ["rotation","correct direction","direction of rotation"],
+  current: ["running current","motor current","amps","amp draw","current balance","balanced current"],
+  loadCheck: ["under load","conveyor runs","conveyor operates","run conveyor","normal load","production load"],
+  heatCheck: ["heat","temperature","thermal","hot spot","hot joint","overheating"]
+};
+
+function matchesConcept(text, conceptName){
+  const t = normalizeTechText(text);
+  const phrases = techConcepts[conceptName] || [];
+  return phrases.some(p => t.includes(normalizeTechText(p)));
+}
+
+function evidenceStrength(s, data){
+  let pts = 0;
+  const e = normalizeTechText(data.evidence);
+  if(s.id==="FM-ELEC-001"){
+    if(matchesConcept(e,"openCircuitEvidence")) pts += 8;
+    if(e.includes("120") || e.includes("voltage") || e.includes("coil")) pts += 4;
+    if(e.includes("does not pull") || e.includes("not pull") || e.includes("contactor")) pts += 3;
+  } else {
+    if(matchesConcept(e,"highResistanceJoint")) pts += 7;
+    if(e.includes("discolor") || e.includes("discolour") || e.includes("heat")) pts += 4;
+    if(e.includes("74") || e.includes("68") || e.includes("78") || e.includes("voltage drop")) pts += 3;
+    if(e.includes("loose") || e.includes("termination") || e.includes("terminal")) pts += 3;
+  }
+  return Math.min(15, pts);
+}
+
 function scoreSubmission(s, data){
  let safety=20;
  const unsafeDeenergized = state.history.some(h=>!h.energized && !state.loto);
@@ -204,34 +267,49 @@ function scoreSubmission(s, data){
  else if(!state.loto && state.history.some(h=>!h.energized)) safety=8;
 
  let root=0, tech=0, verify=0;
+ const diag = normalizeTechText(data.diag);
+ const repairText = normalizeTechText(data.repair);
+ const verifyText = normalizeTechText(data.verify);
+
  if(s.id==="FM-ELEC-001"){
-   if(textHas(data.diag,["contactor coil","open coil","failed contactor","faulty contactor"])) root=15;
-   else if(textHas(data.diag,["contactor"])) root=10;
-   if(textHas(data.repair,["replace contactor","replace coil","same rating","correctly rated"])) tech=15;
-   verify += textHas(data.verify,["pull","engage","energize","start command"])?2:0;
-   verify += textHas(data.verify,["motor start","starts"])?2:0;
-   verify += textHas(data.verify,["voltage"])?2:0;
-   verify += textHas(data.verify,["rotation"])?1:0;
-   verify += textHas(data.verify,["current","amp"])?1:0;
-   verify += textHas(data.verify,["load","conveyor"])?2:0;
+   if(matchesConcept(diag,"failedContactorCoil")) root=15;
+   else if(diag.includes("contactor") || diag.includes("coil")) root=10;
+
+   if(matchesConcept(repairText,"replaceContactor")) tech=15;
+   else if(repairText.includes("replace") && (repairText.includes("coil") || repairText.includes("contactor"))) tech=12;
+
+   verify += matchesConcept(verifyText,"contactorPullIn")?2:0;
+   verify += matchesConcept(verifyText,"motorStarts")?2:0;
+   verify += matchesConcept(verifyText,"voltageCheck")?2:0;
+   verify += matchesConcept(verifyText,"rotation")?1:0;
+   verify += matchesConcept(verifyText,"current")?1:0;
+   verify += matchesConcept(verifyText,"loadCheck")?2:0;
  } else {
-   if(textHas(data.diag,["high resistance","loose terminal","loose wire","voltage drop","poor connection","bad connection","loose connection"])) root=15;
-   else if(textHas(data.diag,["control circuit","connection","terminal"])) root=10;
-   if(textHas(data.repair,["tighten","repair","replace terminal","replace conductor","torque","loose termination"])) tech=15;
-   verify += textHas(data.verify,["no chatter","pulls in","cleanly","contactor"])?2:0;
-   verify += textHas(data.verify,["coil voltage","rated voltage","120","voltage"])?2:0;
-   verify += textHas(data.verify,["motor starts","motor start","remains running"])?2:0;
-   verify += textHas(data.verify,["current","amp"])?1:0;
-   verify += textHas(data.verify,["load","conveyor"])?2:0;
-   verify += textHas(data.verify,["heat","temperature"])?1:0;
+   if(matchesConcept(diag,"highResistanceJoint")) root=15;
+   else if(diag.includes("control circuit") || diag.includes("termination") || diag.includes("terminal") || diag.includes("connection")) root=11;
+
+   if(matchesConcept(repairText,"reterminateRepair")) tech=15;
+   else if(repairText.includes("tight") || repairText.includes("repair") || repairText.includes("replace")) tech=10;
+
+   verify += matchesConcept(verifyText,"contactorPullIn")?2:0;
+   verify += matchesConcept(verifyText,"voltageCheck")?2:0;
+   verify += matchesConcept(verifyText,"motorStarts")?2:0;
+   verify += matchesConcept(verifyText,"current")?1:0;
+   verify += matchesConcept(verifyText,"loadCheck")?2:0;
+   verify += matchesConcept(verifyText,"heatCheck")?1:0;
  }
+
  let reasoning=0;
  const ids=state.history.map(h=>h.key);
  const unique=new Set(ids);
  const valueSum=state.history.reduce((sum,h)=>sum+(s.tests[h.key].value||0),0);
  reasoning=Math.min(25, Math.round(valueSum/4));
+
  if(s.id==="FM-ELEC-001" && unique.has("coilv") && unique.has("coilr") && unique.has("inspect")) reasoning=Math.max(reasoning,23);
  if(s.id==="FM-ELEC-002" && unique.has("coilv") && unique.has("upstream") && unique.has("downstream")) reasoning=Math.max(reasoning,24);
+ if(s.id==="FM-ELEC-002" && unique.has("wiring") && (unique.has("downstream") || unique.has("coilv"))) reasoning=Math.max(reasoning,22);
+
+ reasoning=Math.min(25, Math.max(reasoning, 10 + evidenceStrength(s,data)));
 
  let efficiency=15;
  const repeats=ids.length-unique.size;
@@ -243,6 +321,7 @@ function scoreSubmission(s, data){
  const total=safety+reasoning+efficiency+tech+root+verify;
  return {safety, reasoning, efficiency, tech, root, verify, total};
 }
+
 function pathClassification(s,h,index){
  if(!h.energized) return state.loto?["safety","Safety-critical action"]:["unnecessary","Unsafe / isolation required"];
  if((s.id==="FM-ELEC-001" && ["inspect","coilv","coilr","start","incoming","control"].includes(h.key)) ||

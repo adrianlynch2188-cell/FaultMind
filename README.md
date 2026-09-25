@@ -36,3 +36,10 @@ Create a Pages project and upload this folder or connect a GitHub repository.
 
 ## Important
 This is still a prototype. It intentionally uses local/static scenario data and no external AI API. That makes the technical truth deterministic and avoids hallucinated measurements.
+
+
+## v0.3 grading upgrade
+- Expanded technician-language synonym recognition
+- Recognizes phrases such as `hot joint`, `loose termination`, `reterminate`, `OL`, and `no continuity`
+- Evidence quality now contributes to diagnostic reasoning
+- Repair verification still awards partial credit by concept
