@@ -43,3 +43,9 @@ This is still a prototype. It intentionally uses local/static scenario data and 
 - Recognizes phrases such as `hot joint`, `loose termination`, `reterminate`, `OL`, and `no continuity`
 - Evidence quality now contributes to diagnostic reasoning
 - Repair verification still awards partial credit by concept
+
+
+## v0.4 command-language upgrade
+- Natural-language command matching now ignores filler words such as `the`, `a`, `at`, and `please`.
+- Word order is more tolerant, so phrases like `inspect the contactor`, `check voltage at the contactor coil`, and `look at the control wiring` map to the intended test.
+- Existing deterministic scenario truth and v0.3 grading remain unchanged.

@@ -27,7 +27,7 @@ const scenarios = {
       overload:["overload"],
       estop:["emergency stop","e stop","estop"],
       start:["start command","start signal"],
-      inspect:["inspect contactor","check contactor","contactor operation"],
+      inspect:["inspect contactor","inspect the contactor","check contactor","check the contactor","look at contactor","contactor operation"],
       coilv:["coil voltage","voltage on the coil","voltage at the contactor"],
       coilr:["coil resistance","ohm the coil","continuity of the coil","resistance of coil"],
       motor:["motor winding","motor resistance","check motor"]
@@ -78,7 +78,7 @@ const scenarios = {
       motor:["motor winding","motor resistance"],
       upstream:["before the connection","upstream voltage","before the terminal"],
       downstream:["after the connection","downstream voltage","after the terminal"],
-      wiring:["inspect terminals","control wiring","loose wires","inspect wiring"],
+      wiring:["inspect terminals","inspect the terminals","check terminals","check the terminals","control wiring","loose wires","inspect wiring","check wiring","look at wiring"],
       connr:["resistance across connection","terminal resistance","connection resistance"]
     }
   }
@@ -355,11 +355,34 @@ function runTest(key){
  state.history.push({...t,key});
  render();
 }
+function normalizeIntentText(text){
+  const stopWords = new Set([
+    "the","a","an","please","can","could","would","you","i","we",
+    "to","of","at","on","for","my","this","that","is","are","be"
+  ]);
+  return normalizeTechText(text)
+    .split(" ")
+    .filter(Boolean)
+    .filter(word => !stopWords.has(word));
+}
+
+function intentPhraseMatches(query, phrase){
+  const qTokens = normalizeIntentText(query);
+  const pTokens = normalizeIntentText(phrase);
+
+  if(!qTokens.length || !pTokens.length) return false;
+
+  // Natural wording may insert words or reverse common noun/adjective order.
+  // Match when every meaningful phrase token is present in the user's request.
+  return pTokens.every(token => qTokens.includes(token));
+}
+
 function interpretCommand(raw){
- const s=scenarios[state.scenarioId], q=raw.toLowerCase().trim();
+ const s=scenarios[state.scenarioId], q=raw.trim();
  if(!q) return null;
+
  for(const [key,phrases] of Object.entries(s.intents)){
-   if(phrases.some(p=>q.includes(p))) return key;
+   if(phrases.some(p => intentPhraseMatches(q,p))) return key;
  }
  return null;
 }
