@@ -66,3 +66,15 @@ The prototype now spans:
 - 4–20 mA instrumentation loop troubleshooting
 
 This version is intended as the first real five-scenario MVP candidate for external technician testing.
+
+
+## v0.5.1 dashboard hotfix
+- Fixed duplicated/mixed scenario cards on the dashboard.
+- Dashboard now renders from a fixed ordered scenario list.
+- Added visible build version label so testers can confirm which release is live.
+- Intended dashboard order:
+  1. FM-ELEC-001
+  2. FM-ELEC-002
+  3. FM-ELEC-003
+  4. FM-PLC-001
+  5. FM-INST-001

@@ -1,4 +1,6 @@
 
+const APP_VERSION = "v0.5.1";
+
 const scenarios = {
   "FM-ELEC-001": {
     id:"FM-ELEC-001",
@@ -228,7 +230,7 @@ function pageHtml(){
 }
 function landing(){
  return `<section class="hero">
-  <div class="kicker" style="color:var(--good);margin-bottom:22px">● Simulator Online</div>
+  <div class="kicker" style="color:var(--good);margin-bottom:22px">● Simulator Online · ${APP_VERSION}</div>
   <h1>FaultMind</h1>
   <div class="tagline">Think Like a Troubleshooter.</div>
   <p>Practice real industrial fault diagnosis through interactive simulations.</p>
@@ -242,7 +244,11 @@ function landing(){
 }
 function dashboard(){
  const s=stats();
- return `<h1>Technician Dashboard</h1><p class="muted">Training profile and available simulations.</p>
+ const scenarioOrder=["FM-ELEC-001","FM-ELEC-002","FM-ELEC-003","FM-PLC-001","FM-INST-001"];
+ return `<div class="flex" style="align-items:flex-end;justify-content:space-between">
+   <div><h1>Technician Dashboard</h1><p class="muted">Training profile and available simulations.</p></div>
+   <div class="kicker">${APP_VERSION}</div>
+ </div>
  <div class="stats">
   <div class="card"><div class="metric-label">Current Level</div><div class="metric-value">Technician</div></div>
   <div class="card"><div class="metric-label">FaultMind Rating</div><div class="metric-value">${s.rating}</div></div>
@@ -250,13 +256,18 @@ function dashboard(){
   <div class="card"><div class="metric-label">Average Score</div><div class="metric-value">${s.avg}</div></div>
  </div>
  <h2 class="section-title">Available Simulations</h2>
- <div class="scenario-list">${Object.values(scenarios).map(sc=>`
-  <div class="card scenario-card">
-   <div class="id">${sc.id}</div><h3>${sc.name}</h3>
-   <p class="muted">${sc.equipment[0]} · Difficulty: ${sc.difficulty}</p>
-   <button class="btn-primary" data-start="${sc.id}">Start Simulation</button>
-  </div>`).join("")}</div>`;
+ <div class="scenario-list">${scenarioOrder.map(id=>{
+   const sc=scenarios[id];
+   if(!sc) return "";
+   return `<div class="card scenario-card" data-scenario-card="${sc.id}">
+    <div class="id">${sc.id}</div>
+    <h3>${sc.name}</h3>
+    <p class="muted">${sc.equipment[0]} · Difficulty: ${sc.difficulty}</p>
+    <button class="btn-primary" data-start="${sc.id}">Start Simulation</button>
+   </div>`;
+ }).join("")}</div>`;
 }
+
 function brief(){
  const s=scenarios[state.scenarioId];
  return `<div class="id" style="color:var(--accent);font-family:ui-monospace,monospace">${s.id}</div>
