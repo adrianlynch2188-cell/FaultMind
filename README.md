@@ -49,3 +49,20 @@ This is still a prototype. It intentionally uses local/static scenario data and 
 - Natural-language command matching now ignores filler words such as `the`, `a`, `at`, and `please`.
 - Word order is more tolerant, so phrases like `inspect the contactor`, `check voltage at the contactor coil`, and `look at the control wiring` map to the intended test.
 - Existing deterministic scenario truth and v0.3 grading remain unchanged.
+
+
+## v0.5 — Five-scenario MVP build
+
+Added:
+- FM-ELEC-003 — VFD Trips Under Load
+- FM-PLC-001 — Conveyor Ready But Will Not Start
+- FM-INST-001 — Tank Level Reading Stuck High
+
+The prototype now spans:
+- conventional motor controls
+- high-resistance control circuits
+- VFD/mechanical load interaction
+- PLC permissive troubleshooting
+- 4–20 mA instrumentation loop troubleshooting
+
+This version is intended as the first real five-scenario MVP candidate for external technician testing.
